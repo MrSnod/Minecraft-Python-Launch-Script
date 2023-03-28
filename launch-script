@@ -16,55 +16,63 @@ if eula_accepted.lower() == "y":
     with open(os.path.join(server_path, "eula.txt"), "w") as f:
         f.write("eula=true\n")
 
-# Install java
-def install_java():
-    system = platform.system()
+# Determine operating system
+os_name = platform.system().lower()
 
-    if system == "Darwin":  # Mac OS X
-        try:
-            subprocess.check_call(["/usr/libexec/java_home", "--version"])
-            print("Java is already installed on Mac OS X.")
-            return
-        except subprocess.CalledProcessError:
-            print("Java is not installed on Mac OS X. Installing...")
-            urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-macos-jdk.pkg", "java.pkg")
-            subprocess.check_call(["installer", "-pkg", "java.pkg", "-target", "/"])
-            print("Java installed successfully on Mac OS X.")
+# Determine username
+if os_name == "windows":
+    username = os.getlogin()
+else:
+    username = os.getenv("USER")
 
-    elif system == "Windows":
-        try:
-            subprocess.check_call(["java", "-version"])
-            print("Java is already installed on Windows.")
-            return
-        except subprocess.CalledProcessError:
-            print("Java is not installed on Windows. Installing...")
-            urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-windows-jdk.zip", "java.zip")
-            with zipfile.ZipFile("java.zip", "r") as zip_ref:
-                zip_ref.extractall(".")
-            subprocess.check_call(["cmd.exe", "/c", "setx", "PATH", f"%PATH%;{os.getcwd()}\\jdk-16.0.2\\bin"])
-            print("Java installed successfully on Windows.")
-
-    elif system == "Linux" or system == "Darwin":
-        try:
-            subprocess.check_call(["java", "-version"])
-            print("Java is already installed on Linux or Darwin.")
-            return
-        except subprocess.CalledProcessError:
-            print("Java is not installed on Linux or Darwin. Installing...")
-            if platform.linux_distribution()[0].lower() == "debian":
-                urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-linux-deb.tar.gz", "java.tar.gz")
-                subprocess.check_call(["sudo", "apt", "install", "./java.tar.gz"])
-            elif platform.linux_distribution()[0].lower() == "arch":
-                urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-linux-jdk.tar.gz", "java.tar.gz")
-                subprocess.check_call(["sudo", "pacman", "-U", "./java.tar.gz"])
-            else:
-                print(f"Java installation not supported on {platform.system()}.")
-                sys.exit(1)
-
-            print("Java installed successfully on Linux or Darwin.")
+# Define download URL based on operating system
+if os_name == "darwin":
+    download_url = "https://download.oracle.com/java/17/latest/jdk-17_macos-aarch64_bin.dmg"
+    mount_cmd = "hdiutil attach -quiet -noverify -nobrowse -mountpoint /tmp/jdk_mount /tmp/jdk.dmg"
+    install_cmd = "sudo installer -pkg /tmp/jdk_mount/JDK\ 17.pkg -target /"
+    unmount_cmd = "hdiutil detach -quiet /tmp/jdk_mount"
+elif os_name == "windows":
+    download_url = "https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.exe"
+    install_cmd = f"start /wait /D\"{os.getcwd()}\" jdk-17_windows-x64_bin.exe /s ADDLOCAL=\"ToolsFeature\" /INSTALLDIR=\"C:\\Program Files\\Java\\jdk-17\" /STATIC=1 /L %TEMP%\\jdk-install.log"
+elif os_name == "linux":
+    if "debian" in platform.linux_distribution()[0].lower():
+        download_url = "https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.deb"
+        install_cmd = "sudo dpkg -i jdk-17_linux-x64_bin.deb"
+    elif "arch" in platform.linux_distribution()[0].lower():
+        download_url = "https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz"
+        install_cmd = "sudo tar -C /opt -xzf jdk-17_linux-x64_bin.tar.gz"
     else:
-        print(f"Java installation not supported on {platform.system()}.")
-        sys.exit(1)
+        print("Unsupported Linux distribution")
+        exit()
+
+# Download JDK installer
+urllib.request.urlretrieve(download_url, "/tmp/jdk.dmg" if os_name == "darwin" else "jdk-17.exe" if os_name == "windows" else "jdk-17.deb" if "debian" in platform.linux_distribution()[0].lower() else "jdk-17.tar.gz")
+
+# Mount JDK installer (Mac only)
+if os_name == "darwin":
+    os.system(mount_cmd)
+
+# Install JDK
+os.system(install_cmd)
+
+# Unmount JDK installer (Mac only)
+if os_name == "darwin":
+    os.system(unmount_cmd)
+
+# Set JAVA_HOME environment variable
+if os_name == "windows":
+    java_home_path = r"C:\Program Files\Java\jdk-17"
+    os.environ["JAVA_HOME"] = java_home_path
+    os.system(f'setx JAVA_HOME "{java_home_path}" /M')
+elif os_name == "darwin":
+    os.environ["JAVA_HOME"] = "/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home"
+    os.system('echo "export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home" >> ~/.bash_profile')
+elif "debian" in platform.linux_distribution()[0].lower():
+    os.environ["JAVA_HOME"] = "/usr/lib/jvm/jdk-17"
+    os.system('echo "export JAVA_HOME=/usr/lib/jvm/jdk-17" >> ~/.bashrc')
+elif "arch" in platform.linux_distribution()[0].lower():
+    os.environ["JAVA_HOME"] = "/opt/jdk-17"
+    os.system('echo "export JAVA_HOME=/opt/jdk-17" >> ~/.bashrc')
 
 # Download the latest version of Minecraft server
 response = urllib.request.urlopen("https://piston-data.mojang.com/v1/objects/8f3112a1049751cc472ec13e397eade5336ca7ae/server.jar")
