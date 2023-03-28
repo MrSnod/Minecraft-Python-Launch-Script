@@ -1,6 +1,9 @@
 import os
 import urllib.request
 import zipfile
+import sys
+import platform
+import subprocess
 
 server_path = input("Enter full server path: ")
 username = os.getlogin()
@@ -12,6 +15,56 @@ eula_accepted = input("Do you accept the Minecraft EULA? (y/n): ")
 if eula_accepted.lower() == "y":
     with open(os.path.join(server_path, "eula.txt"), "w") as f:
         f.write("eula=true\n")
+
+# Install java
+def install_java():
+    system = platform.system()
+
+    if system == "Darwin":  # Mac OS X
+        try:
+            subprocess.check_call(["/usr/libexec/java_home", "--version"])
+            print("Java is already installed on Mac OS X.")
+            return
+        except subprocess.CalledProcessError:
+            print("Java is not installed on Mac OS X. Installing...")
+            urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-macos-jdk.pkg", "java.pkg")
+            subprocess.check_call(["installer", "-pkg", "java.pkg", "-target", "/"])
+            print("Java installed successfully on Mac OS X.")
+
+    elif system == "Windows":
+        try:
+            subprocess.check_call(["java", "-version"])
+            print("Java is already installed on Windows.")
+            return
+        except subprocess.CalledProcessError:
+            print("Java is not installed on Windows. Installing...")
+            urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-windows-jdk.zip", "java.zip")
+            with zipfile.ZipFile("java.zip", "r") as zip_ref:
+                zip_ref.extractall(".")
+            subprocess.check_call(["cmd.exe", "/c", "setx", "PATH", f"%PATH%;{os.getcwd()}\\jdk-16.0.2\\bin"])
+            print("Java installed successfully on Windows.")
+
+    elif system == "Linux" or system == "Darwin":
+        try:
+            subprocess.check_call(["java", "-version"])
+            print("Java is already installed on Linux or Darwin.")
+            return
+        except subprocess.CalledProcessError:
+            print("Java is not installed on Linux or Darwin. Installing...")
+            if platform.linux_distribution()[0].lower() == "debian":
+                urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-linux-deb.tar.gz", "java.tar.gz")
+                subprocess.check_call(["sudo", "apt", "install", "./java.tar.gz"])
+            elif platform.linux_distribution()[0].lower() == "arch":
+                urllib.request.urlretrieve("https://corretto.aws/downloads/latest/amazon-corretto-16-x64-linux-jdk.tar.gz", "java.tar.gz")
+                subprocess.check_call(["sudo", "pacman", "-U", "./java.tar.gz"])
+            else:
+                print(f"Java installation not supported on {platform.system()}.")
+                sys.exit(1)
+
+            print("Java installed successfully on Linux or Darwin.")
+    else:
+        print(f"Java installation not supported on {platform.system()}.")
+        sys.exit(1)
 
 # Download the latest version of Minecraft server
 response = urllib.request.urlopen("https://piston-data.mojang.com/v1/objects/8f3112a1049751cc472ec13e397eade5336ca7ae/server.jar")
