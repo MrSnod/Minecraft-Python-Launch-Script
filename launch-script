@@ -1,0 +1,95 @@
+import os
+import urllib.request
+import zipfile
+
+server_path = input("Enter full server path: ")
+username = os.getlogin()
+
+if not os.path.exists(server_path):
+    os.makedirs(server_path)
+
+eula_accepted = input("Do you accept the Minecraft EULA? (y/n): ")
+if eula_accepted.lower() == "y":
+    with open(os.path.join(server_path, "eula.txt"), "w") as f:
+        f.write("eula=true\n")
+
+# Download the latest version of Minecraft server
+response = urllib.request.urlopen("https://launchermeta.mojang.com/mc/game/version_manifest.json")
+version_manifest = response.read().decode()
+version_manifest = json.loads(version_manifest)
+
+latest_version = version_manifest["latest"]["release"]
+server_jar_url = None
+for version in version_manifest["versions"]:
+    if version["id"] == latest_version:
+        version_url = version["url"]
+        response = urllib.request.urlopen(version_url)
+        version_manifest = response.read().decode()
+        version_manifest = json.loads(version_manifest)
+        server_jar_url = version_manifest["downloads"]["server"]["url"]
+        break
+
+if server_jar_url:
+    server_jar_name = server_jar_url.split("/")[-1]
+    server_jar_path = os.path.join(server_path, server_jar_name)
+
+    urllib.request.urlretrieve(server_jar_url, server_jar_path)
+
+    with zipfile.ZipFile(server_jar_path, "r") as zip_ref:
+        zip_ref.extractall(server_path)
+
+    os.remove(server_jar_path)
+
+    os.chown(server_path, username, username)
+
+    print("Minecraft server installed successfully!")
+else:
+    print("Failed to find the latest version of Minecraft server.")
+
+# Check if user wants to install quality of life mods
+install_mods = input("Do you want to install quality of life mods? (y/n): ")
+if install_mods.lower() == "y":
+    mods_dir = os.path.join(server_path, "mods")
+    if not os.path.exists(mods_dir):
+        os.makedirs(mods_dir)
+
+    # Download and install quality of life mods
+    mod_urls = [
+        "https://www.curseforge.com/minecraft/mc-mods/apple-skin/download/3019784/file",
+        "https://www.curseforge.com/minecraft/mc-mods/carry-on/download/2901572/file",
+        "https://www.curseforge.com/minecraft/mc-mods/inventory-tweaks-renewed/download/3219851/file",
+        "https://www.curseforge.com/minecraft/mc-mods/jei/download/3233708/file"
+    ]
+
+    for url in mod_urls:
+        mod_name = url.split("/")[-1]
+        mod_path = os.path.join(mods_dir, mod_name)
+        urllib.request.urlretrieve(url, mod_path)
+
+    print("Quality of life mods installed successfully!")
+else:
+    print("Skipping quality of life mod installation.")
+
+# Download Fabric loader
+fabric_loader_url = "https://meta.fabricmc.net/v2/versions/loader/1.19.4/0.14.18/0.11.2/server/jar"
+fabric_loader_path = os.path.join(server_path, "fabric-loader.jar")
+
+urllib.request.urlretrieve(fabric_loader_url, fabric_loader_path)
+
+# Ask if user wants to edit server.properties
+answer = input('Do you want to edit server.properties? (Y/n) ')
+if answer.lower() == 'y':
+    with open('server.properties', 'r') as file:
+        lines = file.readlines()
+
+    # Edit the properties here
+    for i, line in enumerate(lines):
+        if line.startswith('property_name'):
+            lines[i] = 'property_name=new_value\n'
+
+    with open('server.properties', 'w') as file:
+        file.writelines(lines)
+
+# Launch the server with Fabric loader
+os.chdir(server_path)
+os.system(f"java -jar {fabric_loader_path} nogui")
