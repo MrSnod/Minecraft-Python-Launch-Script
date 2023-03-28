@@ -55,10 +55,10 @@ if install_mods.lower() == "y":
 
     # Download and install quality of life mods
     mod_urls = [
-        "https://www.curseforge.com/minecraft/mc-mods/apple-skin/download/3019784/file",
-        "https://www.curseforge.com/minecraft/mc-mods/carry-on/download/2901572/file",
-        "https://www.curseforge.com/minecraft/mc-mods/inventory-tweaks-renewed/download/3219851/file",
-        "https://www.curseforge.com/minecraft/mc-mods/jei/download/3233708/file"
+        "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/fabric",
+        "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/fabric",
+        "https://cdn.modrinth.com/data/gvQqBUqZ/versions/14hWYkog/lithium-fabric-mc1.19.4-0.11.1.jar",
+        "https://cdn.modrinth.com/data/P7dR8mSH/versions/Pz1hLqTB/fabric-api-0.76.0%2B1.19.4.jar"
     ]
 
     for url in mod_urls:
