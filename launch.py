@@ -11,11 +11,6 @@ username = os.getlogin()
 if not os.path.exists(server_path):
     os.makedirs(server_path)
 
-eula_accepted = input("Do you accept the Minecraft EULA? (y/n): ")
-if eula_accepted.lower() == "y":
-    with open(os.path.join(server_path, "eula.txt"), "w") as f:
-        f.write("eula=true\n")
-
 # Determine operating system
 os_name = platform.system().lower()
 
@@ -104,8 +99,19 @@ if server_jar_url:
     os.chown(server_path, username, username)
 
     print("Minecraft server installed successfully!")
+    # Start the Minecraft server
+    os.chdir(server_path)
+    os.system("java -Xmx1024M -Xms1024M -jar server.jar nogui &")
 else:
     print("Failed to find the latest version of Minecraft server.")
+
+# See if user would like to accept the minecraft EULA
+eula_accepted = input("Do you accept the Minecraft EULA? (y/n): ")
+if eula_accepted.lower() == "y":
+    with open(os.path.join(server_path, "eula.txt"), "w") as f:
+        f.write("eula=true\n")
+    elif eula_accepted.lower() == "n":
+        print("User must accept EULA to use Minecraft server")
 
 # Check if user wants to install quality of life mods
 install_mods = input("Do you want to install quality of life mods? (y/n): ")
