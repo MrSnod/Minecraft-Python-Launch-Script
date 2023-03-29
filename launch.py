@@ -139,9 +139,12 @@ else:
 
 # Download Fabric loader
 fabric_loader_url = "https://meta.fabricmc.net/v2/versions/loader/1.19.4/0.14.18/0.11.2/server/jar"
-fabric_loader_path = os.path.join(server_path, "fabric-loader.jar")
+fabric_loader_path = os.path.join(server_path, "fabric-server.jar")
 
 urllib.request.urlretrieve(fabric_loader_url, fabric_loader_path)
+
+# Rename the downloaded file to "fabric-loader.jar"
+os.rename('fabric-server-mc.1.19.4-loader.0.14.18-launcher.0.11.2', 'fabric-server')
 
 # Ask if user wants to edit server.properties
 answer = input('Do you want to edit server.properties? (Y/n) ')
