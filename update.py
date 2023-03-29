@@ -50,10 +50,24 @@ qol_mods = [
     }
 ]
 
-for mod in qol_mods:
-    mod_path = os.path.join(mods_dir, f"{mod['name']}.jar")
-    with urllib.request.urlopen(mod["url"]) as response, open(mod_path, "wb") as out_file:
-        shutil.copyfileobj(response, out_file)
+# Delete all existing files in the mods directory
+for filename in os.listdir(mods_dir):
+    file_path = os.path.join(mods_dir, filename)
+    try:
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+    except Exception as e:
+        print(f'Failed to delete {file_path}. Reason: {e}')
+
+# Install QoL mods
+install_qol_mods = input("Do you want to install the QoL Mods? (y/n): ")
+if install_qol_mods.lower() == 'y':
+    for mod in qol_mods:
+        mod_path = os.path.join(mods_dir, f"{mod['name']}.jar")
+        with urllib.request.urlopen(mod["url"]) as response, open(mod_path, "wb") as out_file:
+            shutil.copyfileobj(response, out_file)
 
 # Start server
 os.chdir(server_dir)
