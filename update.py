@@ -4,10 +4,6 @@ import shutil
 import urllib.request
 import zipfile
 
-# Set JAVA_HOME environment variable
-java_home_path = input("Enter path to Java home: ")
-os.environ["JAVA_HOME"] = java_home_path
-
 # Set server directory
 server_dir = input("Enter path to server directory: ")
 
